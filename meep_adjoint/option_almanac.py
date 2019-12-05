@@ -1,17 +1,6 @@
-"""General-purpose utilities for meep.adjoint
-
-   This file collects some general-purpose utility functions and classes that are
-   used in meep.adjoint but are not specific to adjoint solvers or computational
-   electromagnetism.
-
-   The functions/classes included are as follows:
-
-   (1) process_options: creates {option:value} dicts by parsing a
-                        hierarchy of config files, environment variables,
-                        and command-line options
-
-   (2) math utility routines
-
+"""option_almanac.py is a simple module that implements a database storing
+   option settings configurable via a precise hierarchy of sources, including
+   config files, environment variables, and command-line options
 """
 import os
 from os import environ as env
@@ -155,7 +144,7 @@ class OptionAlmanac(object):
            but of an incompatible type.
         """
         override = self.enforce_type(name, overrides.get(name))
-        return override or self.options.get(name)
+        return self.options.get(name) if override is None else override
 
 
     def enforce_type(self, name, value):

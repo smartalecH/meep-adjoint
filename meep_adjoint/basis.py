@@ -1,29 +1,29 @@
 """Definition of the Basis abstract base class.
 
-   A Basis is a finite-dimensional space of scalar functions defined on
-   a finite spatial region (the *domain*).
+    A Basis is a finite-dimensional space of scalar functions defined on
+    a finite spatial region (the *domain*).
 
-**Instance Data**
+    **Instance Data**
 
-   An instance of Basis is defined by the following data:
-       (1) a domain V,
-       (2) a set of D scalar basis functions {b_n(x)}, n=0,1,...,D-1, defined in V.
+    An instance of Basis is defined by the following data:
+        (1) a domain V,
+        (2) a set of D scalar basis functions {b_n(x)}, n=0,1,...,D-1, defined in V.
 
-   Once item (2) is specified, individual elements f(x) in the space f(x) are
-   identified by a D-dimensional vector of expansion coefficients
-   {\beta_n} according to f(x) = \sum \beta_n b_n(x).
+    Once item (2) is specified, individual elements f(x) in the space f(x) are
+    identified by a D-dimensional vector of expansion coefficients
+    {\beta_n} according to f(x) = \sum \beta_n b_n(x).
 
-**Exported Methods**
+    **Exported Methods**
 
-   An instance of Basis exports methods implementing the following two operations:
+       An instance of Basis exports methods implementing the following two operations:
 
-       (1) *Projection*: Given an arbitrary scalar function g(x) on V,
-           return the coefficients {g_n} of the element in the space
-           lying closest to g(x).
+          (1) *Projection*: Given an arbitrary scalar function g(x) on V,
+              return the coefficients {g_n} of the element in the space
+              lying closest to g(x).
 
-       (2) *Function instance*: Given a set of expansion coefficients {beta_n}
-           return a callable func that inputs a spatial variable x and
-           outputs func(x) = \sum beta_n b_n(x).
+          (2) *Function instance*: Given a set of expansion coefficients {beta_n}
+              return a callable func that inputs a spatial variable x and
+              outputs func(x) = \sum beta_n b_n(x).
 """
 
 from numbers import Number
@@ -41,11 +41,16 @@ class GridFunc(object):
        of several possible forms), return a scalar function of a
        single integer GridFunc(n) defined by GridFunc(n) == f(x_n).
 
-    Args:
-        f:    specification of function f(x)
-        grid: grid of points {x_n} for integers n=0,1,...,
+    Arguments
+    ---------
+        f: function-like
+           specification of function f(x)
 
-    Return value:
+        grid: array-like
+           grid of points {x_n} for integers n=0,1,...,
+
+    Returns
+    -------
         GridFunc (callable) satisfying GridFunc(n)==f(x_n).
     """
 
@@ -69,7 +74,7 @@ class GridFunc(object):
 
 
 ######################################################################
-# invoke python's 'abstract base class' formalism in a version-agnostic way
+#invoke python's 'abstract base class' formalism in a version-agnostic way
 ######################################################################
 from abc import ABCMeta, abstractmethod
 ABC = ABCMeta('ABC', (object,), {'__slots__': ()}) # compatible with Python 2 and 3
@@ -240,6 +245,10 @@ class Basis(ABC):
                 self.beta = beta_vector
             def __call__(self, p):
                 return self.f0 + np.dot( self.beta, self.b(p) )
+            def func(self):
+                def _f(p):
+                    return self(p)
+                return _f
 
         return _ParameterizedFunction(self, beta_vector)
 

@@ -1,5 +1,4 @@
-"""handling of objective functions and objective quantitieshj
-"""
+"""Handling of objective functions and objective quantities."""
 
 import sys
 import os
@@ -11,26 +10,37 @@ import numpy as np
 
 import meep as mp
 
-
 QRule = namedtuple('QRule', 'code mode ncell')
 
 from . import dft_cell_names
 
+
 def make_qrule(qname):
-    """Decode objective-quantity name to yield rule for computing it.
+    """
+    Decode objective-quantity name to yield rule for computing it.
 
-       A 'qrule' is a recipe for computing a single objective quantity,
-       comprised of three elements: a code string identifying the physical
-       quantity (i.e. 'S' for poynting flux, 'UE' for electric-field energy,
-       etc), the integer index of the DFTCell whose fields are used to
-       compute the quantity, and an optional mode index for objective
-       quantities that involve eigenmodes.
+    A "qrule" is a recipe for computing a single objective quantity,
+    comprised of three elements: a code string identifying the physical
+    quantity (i.e. 'S' for poynting flux, 'UE' for electric-field energy,
+    etc), the integer index of the DFTCell whose fields are used to
+    compute the quantity, and an optional mode index for objective
+    quantities that involve eigenmodes.
 
-       qrules are constructed from the string names of
-       objective variables like 'P2_3' or 'M1_north' or 's_0'.
+    qrules are constructed from the string names of
+    objective variables like 'P2_3' or 'M1_north' or 's_0'.
+
+    Parameters
+    ----------
+    qname : str
+        Name of objective quantity
+
+    Returns
+    -------
+    qrule : QRule
+        Rule for computing the quantity.
 
     """
-    tokens = re.sub(r'([A-Za-z]+)([\d]*)_([\w]+)',r'\1 \2 \3',qname).split()
+    tokens = re.sub(r'([A-Za-z]+)([\d]*)_([\w]+)', r'\1 \2 \3',qname).split()
     if len(tokens)==3:
         code, mode, cellstr = tokens
         mode = int(mode)
@@ -40,9 +50,9 @@ def make_qrule(qname):
         raise ValueError('syntax error in quantity name ' + qname)
     if cellstr.isdigit():
         ncell = int(cellstr)
-    elif cellstr+'_flux' in dft_cell_names:
+    elif cellstr + '_flux' in dft_cell_names:
         ncell = dft_cell_names.index(cellstr+'_flux')
-    elif cellstr+'_fields' in dft_cell_names:
+    elif cellstr + '_fields' in dft_cell_names:
         ncell = dft_cell_names.index(cellstr+'_fields')
     else:
         ncell = -1
@@ -71,66 +81,82 @@ def make_qrule(qname):
 #     def __call__(self, nf=0):
 #         return self.cell(self.code,mode=self.mode, nf=nf)
 
-
-
-
 class ObjectiveFunction(object):
-    """Multivariate scalar-valued function defined by string expression.
-
-        An ObjectiveFunction is a scalar function :math:`f({q_n})`
-        of :math:`N` scalar variables :math:`\{ q_0, q_1, ..., q_{N-1}\}`,
-        where the :math:`{q_n}` are complex-valued in general and
-        f may be real- or complex-valued.
-
-        An instance of ObjectiveFunction is specified by a
-        character string (the fstr input to the constructor)
-        that, upon parsing by sympy.sympify, is identified as
-        a mathematical expression depending on :math:`N` unknown
-        variables (which we call "objective quantities").
-        The strings identified by numpy as the names of the variables
-        should obey meep_adjoint syntax rules for the naming
-        of objective quantities (in particular, they should
-        be parsable by `make_qrule` to yield a valid qrule).
-
-        Class instances store the following data:
-
-        fexpr: sympy expression constructed from fstr
-
-        qsyms: list of sympy.Symbols identified by sympy
-               as the objective quantities, i.e. the inputs
-               on which f depends
-
-        qnames: list of strs giving the names of the objective
-                quantitiesrs giving the names of the objective
-
-        qrules: list of 'qrule' objects specifying how the
-                objective quantities are to be computed
-                from MEEP data (specifically, from frequency-
-                domain field data stored in DFTCells)
-
-        qvals: numpy array storing most recent updates of
-               objective-quantity values
-
-        riqsyms, riqvals: the same data content as
-              qsyms and qvalues, but with each complex-valued
-              'q' quantity split up into real-valued 'r' and 'i'
-              components. We do this to facilitate symbolic
-              differentiation of non-analytic functions
-              of the objective quantities such as :math:`|q_i|^2`
-              ---which, incidentally, would be written within fstr
-                like this: 'Abs(q_i)**2'
     """
+    Multivariate scalar-valued function defined by string expression.
 
+    An `ObjectiveFunction` is a scalar function
+    :math:`f^{obj}({q_n})`
+    of :math:`N` scalar variables :math:`\{ q_0, q_1, ..., q_{N-1}\}`,
+    where the :math:`{q_n}` are complex-valued in general and
+    :math:`f^{obj}` may be real- or complex-valued
+    (only the real part is referenced for optimization purposes).
+
+    An instance of `ObjectiveFunction` is specified by a
+    character string (the `fstr` input to the constructor)
+    that, upon parsing by `sympy.sympify`, is identified as
+    a mathematical expression depending on :math:`N` unknown
+    variables (which we call "objective quantities").
+    The strings identified by `sympy` as the names of the
+    variables should obey `meep_adjoint` naming conventions for
+    objective quantities (in particular, they should
+    be parsable by `make_qrule` to yield a valid `qrule`).
+
+
+    Parameters
+    ----------
+        fstr : str
+            Mathematical expression defining objective function.
+
+        extra_quantities: list of str, optional
+            Optional list of additional objective quantities to be computed
+            and returned each time the objective function is evaluated.
+
+    Class instances store the following data:
+
+        :`fexpr` (`sympy` expression):
+
+            `sympy` expression returned by `sympy.sympify(fstr)`
+
+        :`qsyms` (list of `sympy.Symbol`):
+
+            The variable (unknown) quantities on which the
+            objective function depends, as identified by
+            `sympy` upon parsing `fstr`.
+
+        :`qnames` (list of `str`):
+
+            names of objective quantities
+
+        :`qrules` (list of `QRule`):
+
+            rules specifying how the
+            objective quantities are to be computed
+            from FDTD data (specifically, from frequency-
+            domain field data stored in DFTCells)
+
+        :`qvals` (array-like):
+            cache storing most recently computed values of objective quantities
+
+
+        :`riqsyms`, `riqvals`:
+
+            as qsyms and qvalues, but with each complex-valued
+            'q' quantity split up into real-valued 'r' and 'i'
+            components. We do this to facilitate symbolic
+            differentiation of non-analytic functions of objective
+            quantities such as :math:`|q_i|^2`---which, incidentally,
+            would be written within `fstr` like this: 'Abs(q_i)**2'
+    """
     def __init__(self, fstr='S_0', extra_quantities=[]):
-        """
-        Try to create a sympy expression from the given string and determine
-        names for all input variables (objective quantities) needed to
-        evaluate it.
-        """
+
+        def _parse_absval_bars(s):
+            """preprocess sympy input to replace '|...|' with 'Abs(...)' """
+            return re.sub(r'[|]([^|]*)[|]',r'Abs(\1)',s)
 
         # try to parse the function string to yield a sympy expression
         try:
-            fexpr = sympy.sympify(fstr)
+            fexpr = sympy.sympify( _parse_absval_bars(fstr) )
         except:
             raise ValueError("failed to parse function {}".format(fstr))
 
@@ -171,12 +197,25 @@ class ObjectiveFunction(object):
 
 
     def __call__(self, DFTCells, nf=0):
-        """Compute objective quantities and the objective function.
-           Uses the given list of DFTCells to determine numerical
-           values for all objective quantities :math:`q_n`, then
-           uses these to evaluate the objective function :math:`f`.
-           The return value is an array of length (N+1), whose entries
-           are [ f q0 q1 ...q_{N-1} ]
+        """Compute objective quantities and objective function.
+
+        Uses the given list of DFTCells to determine numerical
+        values for all objective quantities :math:`q_n`, then
+        uses these to evaluate the objective function :math:`f`.
+
+        Parameters
+        ----------
+        DFTCells : list of :class:`dft_cell <meep_adjoint.dft_cell>`
+            List that should contain at least all DFT cells for which
+            objective quantities are defined.
+        nf : int, optional
+             Frequency index, by default 0
+
+        Returns
+        -------
+        Array-like
+            Array containing objective-function value followed by
+            values of all objective quantities:[ f q0 q1 ...q_{N-1} ]
         """
 
         # fetch updated values for all objective quantities
@@ -193,8 +232,16 @@ class ObjectiveFunction(object):
 
 
     def get_dfdq(self):
-        """return vector of partial derivatives \partial f / \partial q
-           using the values of the {q_n} that were cached on the
-           most recent invocation of __call__
+        """Compute first partial derivatives of objective function.
+
+        Compute the partial derivatives :math:`\partial f / \partial q_n`
+        using values of :math:`\{q_n\}` cached on most recent invocation
+        of `__call__` (which must have been invoked at least once before
+        this function can be called).
+
+        Returns
+        -------
+        array-like
+            Array whose *n*th entry is :math:`\partial f/\partial q_n`.
         """
         return np.array( [ df.evalf(subs=self.riqvals) for df in self.dfexpr ] )

@@ -10,13 +10,19 @@ import meep as mp
 ######################################################################
 ######################################################################
 ######################################################################
+from .util import (init_log, log, warn, get_exception_info)
+
 from .option_almanac import (OptionTemplate, OptionAlmanac)
 
 from .adjoint_options import get_adjoint_option, set_adjoint_option_defaults
 
+from .dashboard_server import run_dashboard
+
+from .dashboard_client import (launch_dashboard, update_dashboard, close_dashboard)
+
 from .dft_cell import (ORIGIN, XHAT, YHAT, ZHAT, E_CPTS, H_CPTS, EH_CPTS,
                        v3, V3, Subregion, DFTCell, Grid, fix_array_metadata,
-                       make_grid, dft_cell_names)
+                       make_grid, dft_cell_names, rescale_sources)
 
 from .objective import ObjectiveFunction
 
@@ -31,6 +37,8 @@ from .visualization_options import (get_visualization_option,
                                     set_visualization_option_defaults)
 
 from .visualization import visualize_sim
+
+from .console_manager import ConsoleManager, termsty
 
 from .optimization_problem import OptimizationProblem
 
