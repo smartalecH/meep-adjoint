@@ -85,7 +85,18 @@ class TimeStepper(object):
             EH_adj = self.design_cell.get_EH_slices()
             ncs = [n for (n,c) in enumerate(self.design_cell.components) if c in E_CPTS]
             self.dfdEps = np.real(np.sum( [ EH_fwd[nc]*EH_adj[nc] for nc in ncs ] ) )
+            print(EH_fwd)
+            print(EH_adj)
+            print(ncs)
+            print('=============================')
+            print(E_CPTS)
+            print(self.design_cell.components)
+            print(self.dfdEps)
+            
             retvals = self.basis.project(self.dfdEps, grid=self.design_cell.grid)
+
+            print(retvals)
+            quit()
         return retvals
 
 
@@ -115,7 +126,7 @@ class TimeStepper(object):
 
         # start by timestepping without interruption until the sources are extinguished
         log("Beginning {} timestepping run...".format(job))
-        self.sim.run(*step_funcs, until=last_source_time)
+        self.sim.run(*step_funcs, until_after_sources=last_source_time)
         vals = self.__update__(job)
 
         # now continue timestepping with intermittent convergence checks until

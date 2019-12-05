@@ -3,7 +3,7 @@ import argparse
 import numpy as np
 import meep as mp
 
-from meep.adjoint import (OptimizationProblem, DFTCell, adjoint_options,
+from meep_adjoint import (OptimizationProblem, DFTCell, adjoint_options,
                           xHat, yHat, zHat, origin, FluxLine,
                           ParameterizedDielectric, FiniteElementBasis)
 
@@ -168,5 +168,5 @@ class Splitter12(OptimizationProblem):
 # opt_prob, and call its run() method.
 ######################################################################
 if __name__ == '__main__':
-    opt_prob=globals()[__file__.split('/')[-1].split('.')[0]]()
-    opt_prob.run()
+    opt_prob=Splitter12()
+    opt_prob(True)

@@ -32,7 +32,7 @@ def abs2(z):
 ######################################################################
 ######################################################################
 ######################################################################
-def visualize_sim(sim, fig=None, plot3D=None,
+def visualize_sim(sim, fig=None, plot3D=None, plot_dft_data=None,
                   src_labels=[], dft_labels=[], options={}):
 
     # if plot3D not specified, set it automatically: false

@@ -13,6 +13,8 @@ from meep_adjoint import get_visualization_option as vis_opt
 from meep_adjoint import ( OptimizationProblem, Subregion,
                            ORIGIN, XHAT, YHAT, ZHAT, E_CPTS, H_CPTS, v3, V3)
 
+from matplotlib import pyplot as plt
+import nlopt
 
 ######################################################################
 # override meep_adjoint's default settings for some configuration opts
@@ -139,4 +141,39 @@ opt_prob = OptimizationProblem(objective_regions=[north, south, east, west1, wes
                                cell_size=cell_size, background_geometry=[hwvg, vwvg],
                                source_region=source_region,
                                extra_quantities=extra_quantities, extra_regions=[full_region])
-opt_prob.visualize()
+
+##################################################
+# set up optimizer and run optimization
+##################################################
+
+#----------------------------------------
+#- Callable objective function with gradient
+#----------------------------------------
+def J(x, grad):
+    f, grad_temp = opt_prob(beta_vector=x,need_gradient=True)
+
+    print(f[0])
+    print(grad_temp)
+    print(n)
+    grad[:] = grad_temp
+    opt_prob.stepper.sim.plot2D()
+    plt.show()
+    quit()
+    return np.abs(f[0])
+
+'''def J(x,grad):
+    f = 2-5*x**2
+    grad[:] = -10*x
+    return f'''
+
+
+maxtime = 60*5
+algorithm = nlopt.LD_SLSQP
+x0 = opt_prob.beta_vector
+n = opt_prob.basis.dim
+
+opt = nlopt.opt(algorithm, n)
+opt.set_max_objective(J)
+opt.set_maxtime(maxtime)
+xopt = opt.optimize(x0)
+print(xopt)

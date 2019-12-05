@@ -160,7 +160,7 @@ class OptimizationProblem(object):
                                         cell_size=V3(cell_size), geometry=geometry)
 
         # TimeStepper
-        self.stepper    = TimeStepper(obj_func, dft_cells, basis, sim, sources)
+        self.stepper    = TimeStepper(obj_func, dft_cells, self.basis, sim, sources)
 
         #-----------------------------------------------------------------------
         # if the 'filebase' configuration option wasn't specified, set it
@@ -195,7 +195,7 @@ class OptimizationProblem(object):
                     f derivatives w.r.t. each design variable (if need_gradient==True),
                   = None (need_gradient==False)
         """
-        if beta_vector:
+        if beta_vector is not None:
             self.update_design(beta_vector)
 
         fq    = self.stepper.run('forward')
